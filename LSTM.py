@@ -86,8 +86,7 @@ class LSTMStock(nn.Module):
         mm_scaler = MinMaxScaler(feature_range=(-1, 1))
         std_scaler = StandardScaler()
 
-        #x_std = std_scaler.transform(self.inputX)
-        x_std = self.inputX
+        x_std = std_scaler.fit_transform(self.inputX)
         y_mm = mm_scaler.fit_transform(self.outY.values.reshape(-1,1))
 
         x_slice = self.sliceWindow(x_std)
