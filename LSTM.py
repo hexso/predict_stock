@@ -1,13 +1,11 @@
 import numpy as np
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import RobustScaler, MinMaxScaler
 import pandas as pd
-from pandas import DataFrame
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
 import time
+import joblib
 
 class LSTMStock(nn.Module):
 
@@ -15,52 +13,19 @@ class LSTMStock(nn.Module):
         super(LSTMStock, self).__init__()
 
         self.fileName = None
-        self.data = DataFrame()
-        self.inputX = DataFrame()
-        self.outY = DataFrame()
         self.trainRate = 0.9
-        self.date = None
-        self.x_std = None
-        self.y_mm = None
-        self.inputSize = 5
+        self.inputSize = 12
         self.outputSize = 1
         self.layerNum = 1
         self.hiddenDim = 128
         self.epochCnt = 100
         self.windowSize = 20
+        self.minmaxScaler = MinMaxScaler
+        self.minmaxList = ['Open','Close','BUPPER','BMIDDLE','BLOWER','SMA20','SMA5']
+        self.robustList = ['Volume','OBV']
+        self.originList = ['MACD','STOCHK','STOCHD']
         self.lstm = nn.LSTM(self.inputSize, self.hiddenDim, self.layerNum, batch_first=True)
         self.hiddenLayer = nn.Linear(self.hiddenDim, self.outputSize)
-
-
-    def setFile(self, filename, date):
-        self.fileName = filename
-        self.data = pd.read_csv(filename)
-        self.date = date
-        #날짜 정렬 등 데이터 처리
-        self.dataProcessing()
-
-    def setInput(self, inputlist):
-        for col in inputlist:
-            self.inputX[col] = self.data.loc[:,col]
-        self.inputSize = len(inputlist)
-
-    def setOutput(self, outlist):
-        for col in outlist:
-            self.outY[col] = self.data.loc[:,col]
-        self.outputSize = len(outlist)
-
-    def dataProcessing(self):
-        self.data.sort_values(by=self.date).reset_index()
-        for col in self.data.columns:
-            if col != self.date and self.data[col].dtype == 'O':
-                self.data[col] = self.data[col].str.replace(',','')
-                self.data[col] = self.data[col].str.replace('M','000000')
-                self.data[col] = self.data[col].str.replace('K','000')
-                self.data[col] = self.data[col].str.replace('.','')
-                self.data[col] = self.data[col].astype(float)
-
-        self.data.index = self.data[self.date]
-        self.data = self.data.drop(self.date, axis=1)
 
     def sliceWindow(self, stock_data):
         data_raw = stock_data
@@ -82,29 +47,73 @@ class LSTMStock(nn.Module):
         out = self.hiddenLayer(out[:, -1, :])
         return out
 
-    def run(self, model):
-        mm_scaler = MinMaxScaler(feature_range=(-1, 1))
-        std_scaler = StandardScaler()
+    def dataProcessing(self, data):
+        if 'Date' in data.columns:
+            data.index = data['Date']
+            data = data.drop('Date', axis=1)
 
-        x_std = std_scaler.fit_transform(self.inputX)
-        y_mm = mm_scaler.fit_transform(self.outY.values.reshape(-1,1))
+        self.minmaxScaler = MinMaxScaler(feature_range=(-1,1))
+        robust_scaler = RobustScaler()
 
-        x_slice = self.sliceWindow(x_std)
-        y_slice = y_mm[:-self.windowSize]
-        print(x_slice.shape)
-        print(y_slice.shape)
+        for col in self.minmaxList:
+            data[col] = self.minmaxScaler.fit_transform(data[col].values.reshape(-1,1))
+
+        for col in self. robustList:
+            data[col] = robust_scaler.fit_transform(data[col].values.reshape(-1,1))
+
+        for col in self.originList:
+            data[col] = data[col]
+
+        for col in data.columns:
+            if col not in self.minmaxList and col not in self.robustList and col not in self.originList:
+                data = data.drop(col,axis=1)
+
+        slice_data = self.sliceWindow(data)
+        x_slice_data = np.array(slice_data)
+        y_slice_data = self.sliceWindow(data['Close'])
+
+        return x_slice_data, y_slice_data
+
+
+    def predict(self, model, data):
+        x_slice, y_slice = self.dataProcessing(data)
+
+        x_slice = x_slice[:,:-1]
+        y_slice = np.array(y_slice[:,-1]).reshape(-1,1)
+
+        x_predict_lstm = torch.from_numpy(x_slice).type(torch.Tensor)
+
+        y_predict = model(x_predict_lstm)
+        y_predict = self.minmaxScaler.inverse_transform(y_predict.detach().numpy())
+        y_origin = self.sliceWindow(data['Close'])[:,-1]
+
+        figure, axes = plt.subplots(figsize=(15, 6))
+        axes.xaxis_date()
+        axes.plot(data[len(data)-len(y_slice):].index, y_origin, color='red', label='Real price')
+        axes.plot(data[len(data)-len(y_slice):].index, y_predict, color='blue', label='Predict price')
+
+        plt.xlabel('Time')
+        plt.ylabel('price')
+        plt.legend()
+        plt.show()
+
+    def learn(self, model, data):
+
+        x_slice, y_slice = self.dataProcessing(data)
+
         total_size = len(x_slice)
-        x_train = x_slice[:int(total_size*self.trainRate)]
-        x_test = x_slice[int(total_size*self.trainRate):]
+        train_size = int(total_size*self.trainRate)
+        x_train = x_slice[:train_size,:-1]
+        x_test = x_slice[train_size:,:-1]
 
-        y_train = y_slice[:int(total_size*self.trainRate)]
-        y_test = y_slice[int(total_size*self.trainRate):]
+        y_train = np.array(y_slice[:train_size,-1]).reshape(-1,1)
+        y_test = np.array(y_slice[train_size:,-1]).reshape(-1,1)
 
         print('training size is {}'.format(x_train.shape))
         print('test size is {}'.format(x_test.shape))
 
-        x_train = torch.from_numpy(x_train).type(torch.Tensor)
-        x_test = torch.from_numpy(x_test).type(torch.Tensor)
+        x_train_lstm = torch.from_numpy(x_train).type(torch.Tensor)
+        x_test_lstm = torch.from_numpy(x_test).type(torch.Tensor)
         y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor)
         y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor)
 
@@ -116,7 +125,7 @@ class LSTMStock(nn.Module):
 
         start_time = time.time()
         for t in range(self.epochCnt):
-            y_train_pred = model(x_train)
+            y_train_pred = model(x_train_lstm)
             print(y_train_pred.shape)
             print(y_train_lstm.shape)
             loss = loss_function(y_train_pred, y_train_lstm)
@@ -128,11 +137,15 @@ class LSTMStock(nn.Module):
             optimiser.step()
         train_time = time.time() - start_time
         print('Training Time : {}'.format(train_time))
-        plt.plot(hist, label='Training loss')
-        plt.legend()
-        plt.show()
 
+    def save(self, model, filename='model.pt', mmScaler='mm.joblib'):
+        torch.save(model.state_dict(), filename)
+        joblib.dump(self.minmaxScaler, mmScaler)
 
+    def load(self, filename='', mmScaler='mm.joblib'):
+        model = torch.load(filename)
+        self.minmaxScaler = joblib.load(mmScaler)
+        return model
 
 if __name__ == '__main__':
     #날짜를 정해서 불러오는 방법
@@ -141,11 +154,7 @@ if __name__ == '__main__':
     # end = datetime.date.today()
     # df = pdr.DataReader('005930.KS', 'yahoo', start, end)
 
+    df = pd.read_csv('samsung.csv')
     lstm = LSTMStock()
-    lstm.setFile('stocks/samsung.csv','Date')
-    inputList = ['Open','High','Low','Close','Volume']
-    outputList = ['Close']
-
-    lstm.setInput(inputList)
-    lstm.setOutput(outputList)
-    lstm.run(lstm)
+    lstm.run(lstm,df)
+    lstm.save(lstm)

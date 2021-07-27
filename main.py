@@ -4,23 +4,25 @@ from Stock import StockCal
 import pandas as pd
 
 if __name__ == '__main__':
-    data = fdr.DataReader('005930')
-    data.to_csv('stocks/samsung.csv')
+
+    filename = 'stocks/samsung.csv'
+    #
+    # #주식코드로 데이터를 받아온다.
+    # data = fdr.DataReader('005930')
+    # data.to_csv(filename)
+    #
+    # #주식데이터로 보조지표를 만들어 낸다.
+    # stockCal = StockCal()
+    # df = pd.read_csv(filename)
+    # df = stockCal.getStockInput(df)
+    # df.to_csv(filename)
+    #
+    # # 나스닥지수
+    # # nq = fdr.DataReader('NASDAQCOM', data_source='fred')
+    data = pd.read_csv(filename)
     lstm = LSTMStock()
-    stockCal = StockCal()
-    df = pd.read_csv('stocks/samsung.csv')
-    df = stockCal.getStockInput(df)
-    df.to_csv('stocks/samsung.csv')
-
-    lstm.setFile('stocks/samsung.csv', 'Date')
-    
-    #나스닥지수
-    nq = fdr.DataReader('NASDAQCOM', data_source='fred')
-
-    inputList = ['Open', 'Close', 'Volume', 'MACD','STOCHK','STOCHD',
-                 'BUPPER','BMIDDLE','BLOWER','OBV','SMA20','SMA5']
-    outputList = ['Close']
-
-    lstm.setInput(inputList)
-    lstm.setOutput(outputList)
-    lstm.run(lstm)
+    lstm.learn(lstm,data)
+    lstm.save(lstm)
+    # lstm.predict(lstm,data)
+    # model = lstm.load('model.pt')
+    # lstm.predict(lstm,data)
