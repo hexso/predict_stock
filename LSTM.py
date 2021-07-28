@@ -9,7 +9,7 @@ import joblib
 
 class LSTMStock(nn.Module):
 
-    def __init__(self):
+    def __init__(self, processor='cpu'):
         super(LSTMStock, self).__init__()
 
         self.fileName = None
@@ -24,8 +24,9 @@ class LSTMStock(nn.Module):
         self.minmaxList = ['Open','Close','BUPPER','BMIDDLE','BLOWER','SMA20','SMA5']
         self.robustList = ['Volume','OBV']
         self.originList = ['MACD','STOCHK','STOCHD']
-        self.lstm = nn.LSTM(self.inputSize, self.hiddenDim, self.layerNum, batch_first=True)
-        self.hiddenLayer = nn.Linear(self.hiddenDim, self.outputSize)
+        self.device = torch.device(processor)
+        self.lstm = nn.LSTM(self.inputSize, self.hiddenDim, self.layerNum, batch_first=True).to(self.device)
+        self.hiddenLayer = nn.Linear(self.hiddenDim, self.outputSize).to(self.device)
 
     def sliceWindow(self, stock_data):
         data_raw = stock_data
@@ -38,9 +39,9 @@ class LSTMStock(nn.Module):
         return data
 
     def forward(self, x):
-        h0 = torch.zeros(self.layerNum, x.size(0), self.hiddenDim).requires_grad_()
+        h0 = torch.zeros(self.layerNum, x.size(0), self.hiddenDim).to(self.device).requires_grad_()
 
-        c0 = torch.zeros(self.layerNum, x.size(0), self.hiddenDim).requires_grad_()
+        c0 = torch.zeros(self.layerNum, x.size(0), self.hiddenDim).to(self.device).requires_grad_()
 
         out, (hn,cn) = self.lstm(x, (h0.detach(), c0.detach()))
 
@@ -98,7 +99,6 @@ class LSTMStock(nn.Module):
         plt.show()
 
     def learn(self, model, data):
-
         x_slice, y_slice = self.dataProcessing(data)
 
         total_size = len(x_slice)
@@ -125,6 +125,9 @@ class LSTMStock(nn.Module):
 
         start_time = time.time()
         for t in range(self.epochCnt):
+            x_train_lstm = x_train_lstm.to(self.device)
+            y_train_lstm = y_train_lstm.to(self.device)
+
             y_train_pred = model(x_train_lstm)
             print(y_train_pred.shape)
             print(y_train_lstm.shape)
