@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.preprocessing import RobustScaler, MinMaxScaler
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, StandardScaler
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch
@@ -9,22 +9,31 @@ import joblib
 
 class LSTMStock(nn.Module):
 
-    def __init__(self, processor='cpu'):
+    def __init__(self, output='Close',minmax=[], robust=[], origin=[], std=[],processor='cpu'):
         super(LSTMStock, self).__init__()
 
         self.fileName = None
         self.trainRate = 0.9
-        self.inputSize = 12
+        self.inputSize = len(minmax) + len(robust) + len(origin) + len(std)
         self.outputSize = 1
         self.layerNum = 1
         self.hiddenDim = 128
         self.epochCnt = 100
         self.windowSize = 20
-        self.minmaxScaler = MinMaxScaler
-        self.minmaxList = ['Open','Close','BUPPER','BMIDDLE','BLOWER','SMA20','SMA5']
-        self.robustList = ['Volume','OBV']
-        self.originList = ['MACD','STOCHK','STOCHD']
+        self.output = output
         self.device = torch.device(processor)
+        #Scaler 리스트
+        self.minmaxList = minmax
+        self.stdList = std
+        self.originList = origin
+        self.robustList = robust
+        self.scalerDataList = [self.minmaxList, self.stdList, self.robustList]
+        self.minmaxScaler = MinMaxScaler()
+        self.stdScaler = StandardScaler()
+        self.robustScaler = RobustScaler()
+        self.scalerList = [self.minmaxScaler, self.stdScaler, self.robustScaler]
+
+        #뉴런 구조
         self.lstm = nn.LSTM(self.inputSize, self.hiddenDim, self.layerNum, batch_first=True).to(self.device)
         self.hiddenLayer = nn.Linear(self.hiddenDim, self.outputSize).to(self.device)
 
@@ -49,29 +58,19 @@ class LSTMStock(nn.Module):
         return out
 
     def dataProcessing(self, data):
+        new_data = pd.DataFrame()
+        new_data['Date'] = data['Date']
+
+        for idx, scalerData in enumerate(self.scalerDataList):
+            for col in scalerData:
+                reshape_data = data[col].values.reshape(-1,1)
+                new_data[col] = self.scalerList[idx].fit_transform(reshape_data)
         if 'Date' in data.columns:
-            data.index = data['Date']
-            data = data.drop('Date', axis=1)
-
-        self.minmaxScaler = MinMaxScaler(feature_range=(-1,1))
-        robust_scaler = RobustScaler()
-
-        for col in self.minmaxList:
-            data[col] = self.minmaxScaler.fit_transform(data[col].values.reshape(-1,1))
-
-        for col in self. robustList:
-            data[col] = robust_scaler.fit_transform(data[col].values.reshape(-1,1))
-
-        for col in self.originList:
-            data[col] = data[col]
-
-        for col in data.columns:
-            if col not in self.minmaxList and col not in self.robustList and col not in self.originList:
-                data = data.drop(col,axis=1)
-
-        slice_data = self.sliceWindow(data)
+            new_data = new_data.drop('Date',axis=1)
+            new_data.index = data['Date']
+        slice_data = self.sliceWindow(new_data)
         x_slice_data = np.array(slice_data)
-        y_slice_data = self.sliceWindow(data['Close'])
+        y_slice_data = self.sliceWindow(new_data[self.output])
 
         return x_slice_data, y_slice_data
 
@@ -82,7 +81,7 @@ class LSTMStock(nn.Module):
         x_slice = x_slice[:,:-1]
         y_slice = np.array(y_slice[:,-1]).reshape(-1,1)
 
-        x_predict_lstm = torch.from_numpy(x_slice).type(torch.Tensor)
+        x_predict_lstm = torch.from_numpy(x_slice).type(torch.Tensor).to(self.device)
 
         y_predict = model(x_predict_lstm)
         y_predict = self.minmaxScaler.inverse_transform(y_predict.detach().numpy())
@@ -100,7 +99,7 @@ class LSTMStock(nn.Module):
 
     def learn(self, model, data):
         x_slice, y_slice = self.dataProcessing(data)
-
+        data.index = data['Date']
         total_size = len(x_slice)
         train_size = int(total_size*self.trainRate)
         x_train = x_slice[:train_size,:-1]
@@ -112,10 +111,10 @@ class LSTMStock(nn.Module):
         print('training size is {}'.format(x_train.shape))
         print('test size is {}'.format(x_test.shape))
 
-        x_train_lstm = torch.from_numpy(x_train).type(torch.Tensor)
-        x_test_lstm = torch.from_numpy(x_test).type(torch.Tensor)
-        y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor)
-        y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor)
+        x_train_lstm = torch.from_numpy(x_train).type(torch.Tensor).to(self.device)
+        x_test_lstm = torch.from_numpy(x_test).type(torch.Tensor).to(self.device)
+        y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(self.device)
+        y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(self.device)
 
         loss_function = nn.MSELoss(reduction='mean')
         optimiser = torch.optim.Adam(model.parameters(), lr=0.01)
@@ -125,14 +124,11 @@ class LSTMStock(nn.Module):
 
         start_time = time.time()
         for t in range(self.epochCnt):
-            x_train_lstm = x_train_lstm.to(self.device)
-            y_train_lstm = y_train_lstm.to(self.device)
 
             y_train_pred = model(x_train_lstm)
-            print(y_train_pred.shape)
-            print(y_train_lstm.shape)
             loss = loss_function(y_train_pred, y_train_lstm)
-            print('Epoch ', t, 'MSE: ', loss.item())
+            if t % 5 == 0:
+                print('Epoch ', t, 'MSE: ', loss.item())
             hist[t] = loss.item()
 
             optimiser.zero_grad()
@@ -140,6 +136,21 @@ class LSTMStock(nn.Module):
             optimiser.step()
         train_time = time.time() - start_time
         print('Training Time : {}'.format(train_time))
+
+        y_test_pred = model(x_test_lstm)
+
+        y_test_pred = self.minmaxScaler.inverse_transform(y_test_pred.to('cpu').detach().numpy())
+        y_test_lstm = self.minmaxScaler.inverse_transform(y_test_lstm.to('cpu').detach().numpy())
+        figure, axes = plt.subplots(figsize=(15, 6))
+        axes.xaxis_date()
+        axes.plot(data[len(data) - len(y_test_pred):].index, y_test_lstm, color='red', label='Real price')
+        axes.plot(data[len(data) - len(y_test_pred):].index, y_test_pred, color='blue', label='Predict price')
+
+        plt.xlabel('Time')
+        plt.ylabel('price')
+        plt.legend()
+        plt.show()
+
 
     def save(self, model, filename='model.pt', mmScaler='mm.joblib'):
         torch.save(model.state_dict(), filename)
