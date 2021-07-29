@@ -65,12 +65,17 @@ class LSTMStock(nn.Module):
             for col in scalerData:
                 reshape_data = data[col].values.reshape(-1,1)
                 new_data[col] = self.scalerList[idx].fit_transform(reshape_data)
+        for col in self.originList:
+            new_data[col] = data[col]
+
         if 'Date' in data.columns:
             new_data = new_data.drop('Date',axis=1)
             new_data.index = data['Date']
-        slice_data = self.sliceWindow(new_data)
-        x_slice_data = np.array(slice_data)
-        y_slice_data = self.sliceWindow(new_data[self.output])
+
+        slice_data_x = self.sliceWindow(new_data)
+        slice_data_y = self.sliceWindow(new_data[self.output])
+        x_slice_data = np.array(slice_data_x)
+        y_slice_data = np.array(slice_data_y)
 
         return x_slice_data, y_slice_data
 
@@ -85,7 +90,7 @@ class LSTMStock(nn.Module):
 
         y_predict = model(x_predict_lstm)
         y_predict = self.minmaxScaler.inverse_transform(y_predict.detach().numpy())
-        y_origin = self.sliceWindow(data['Close'])[:,-1]
+        y_origin = self.sliceWindow(data[self.output])[:,-1]
 
         figure, axes = plt.subplots(figsize=(15, 6))
         axes.xaxis_date()
@@ -98,8 +103,8 @@ class LSTMStock(nn.Module):
         plt.show()
 
     def learn(self, model, data):
+
         x_slice, y_slice = self.dataProcessing(data)
-        data.index = data['Date']
         total_size = len(x_slice)
         train_size = int(total_size*self.trainRate)
         x_train = x_slice[:train_size,:-1]
@@ -141,8 +146,11 @@ class LSTMStock(nn.Module):
 
         y_test_pred = self.minmaxScaler.inverse_transform(y_test_pred.to('cpu').detach().numpy())
         y_test_lstm = self.minmaxScaler.inverse_transform(y_test_lstm.to('cpu').detach().numpy())
+
         figure, axes = plt.subplots(figsize=(15, 6))
         axes.xaxis_date()
+
+        data.index = data['Date']
         axes.plot(data[len(data) - len(y_test_pred):].index, y_test_lstm, color='red', label='Real price')
         axes.plot(data[len(data) - len(y_test_pred):].index, y_test_pred, color='blue', label='Predict price')
 
