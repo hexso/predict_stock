@@ -19,6 +19,8 @@ class StockCal:
         nasdaq = pd.read_csv('NASDAQ.csv')
         nasdaq.index = nasdaq['DATE']
         x['NASDAQ'] = nasdaq.loc[start:end]['Change']
+        func = lambda x: 0 if x<0.05 else 1
+        x['Change5'] = x['Change'].apply(func)
         return x.fillna(0)
 
 if __name__ == '__main__':
