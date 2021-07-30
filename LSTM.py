@@ -36,6 +36,7 @@ class LSTMStock(nn.Module):
         #뉴런 구조
         self.lstm = nn.LSTM(self.inputSize, self.hiddenDim, self.layerNum, batch_first=True).to(self.device)
         self.hiddenLayer = nn.Linear(self.hiddenDim, self.outputSize).to(self.device)
+        self.outputLayer = nn.ReLU().to(self.device)
 
     def sliceWindow(self, stock_data):
         data_raw = stock_data
@@ -53,8 +54,8 @@ class LSTMStock(nn.Module):
         c0 = torch.zeros(self.layerNum, x.size(0), self.hiddenDim).to(self.device).requires_grad_()
 
         out, (hn,cn) = self.lstm(x, (h0.detach(), c0.detach()))
-
         out = self.hiddenLayer(out[:, -1, :])
+        out = self.outputLayer(out)
         return out
 
     def dataProcessing(self, data):
@@ -121,7 +122,7 @@ class LSTMStock(nn.Module):
         y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(self.device)
         y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(self.device)
 
-        loss_function = nn.MSELoss(reduction='mean')
+        loss_function = nn.BCELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr=0.01)
 
         hist = np.zeros(self.epochCnt)
@@ -139,14 +140,14 @@ class LSTMStock(nn.Module):
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
+
         train_time = time.time() - start_time
         print('Training Time : {}'.format(train_time))
 
         y_test_pred = model(x_test_lstm)
 
-        y_test_pred = self.minmaxScaler.inverse_transform(y_test_pred.to('cpu').detach().numpy())
-        y_test_lstm = self.minmaxScaler.inverse_transform(y_test_lstm.to('cpu').detach().numpy())
-
+        y_test_pred = y_test_pred.to('cpu').detach().numpy()
+        y_test_lstm = y_test_lstm.to('cpu').detach().numpy()
         figure, axes = plt.subplots(figsize=(15, 6))
         axes.xaxis_date()
 
