@@ -21,8 +21,10 @@ class StockCal:
         x['NASDAQ'] = nasdaq.loc[start:end]['Change']
         func = lambda x: 0 if x<0.05 else 1
         x['Change5'] = x['Change'].apply(func)
+        x['Change5_tmw'] = x['Change5'].shift(-1).fillna(0)
         func = lambda x: 0 if x < 0.03 else 1
         x['Change3'] = x['Change'].apply(func)
+        x['Change3_tmw'] = x['Change3'].shift(-1).fillna(0)
         positive_func = lambda  x: 0 if x<0 else 1
         x['up'] = x['Change'].apply(positive_func)
         x['tmw_up'] = x['Change'].apply(positive_func).shift(-1).fillna(0)
