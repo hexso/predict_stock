@@ -13,7 +13,11 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, classification_report
-
+'''
+Linear를 이용한 주식 예측 모델
+Binary loss function을 통해 3%상승, 5%상승과 같은 특정 수치를 맞혔는지에 대한 모델
+따라서 output값을 0 또는 1로 되어있는 두개의 결과값으로 나타나 있는 값을 줘야 한다.
+'''
 
 
 class Linear(nn.Module):

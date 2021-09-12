@@ -6,6 +6,11 @@ import torch
 import torch.nn as nn
 import time
 
+'''
+Linear를 이용한 주식 예측 모델
+Binary loss function을 통해 3%상승, 5%상승과 같은 특정 수치를 맞혔는지에 대한 모델
+따라서 output값을 0 또는 1로 되어있는 두개의 결과값으로 나타나 있는 값을 줘야 한다.
+'''
 
 class GRUStock(nn.Module):
 
@@ -100,7 +105,7 @@ class GRUStock(nn.Module):
         start_time = time.time()
         for t in range(self.epochCnt):
             y_train_pred = model(x_train_torch)
-            loss = loss_function(y_train_pred, y_train_torch)
+            loss = loss_function(y_train_pred, y_train_torch.reshape(-1,1))
             if t % 5 == 0:
                 print('Epoch ', t, 'MSE: ', loss.item())
             hist[t] = loss.item()
@@ -123,3 +128,17 @@ class GRUStock(nn.Module):
         plt.ylabel('price')
         plt.legend()
         plt.show()
+
+
+if __name__ == '__main__':
+    # #주식데이터로 보조지표를 만들어 낸다.
+    # stockCal = StockCal()
+    # for stock_name in stock_code.keys():
+    #     print(stock_name)
+    #     df = pd.read_csv('stocks/'+stock_name +'.csv')
+    #     df = stockCal.getStockInput(df)
+    #     df.to_csv('stocks/'+stock_name +'.csv')
+    data = pd.read_csv('stocks/samsung.csv')
+    inputs = ['Open','High','Low','Close','Volume','Change']
+    gru = GRUStock(origin=inputs, output='Change')
+    gru.learn(gru, data)
