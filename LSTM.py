@@ -78,7 +78,7 @@ class LSTMStock(nn.Module):
             new_data.index = data['Date']
 
         slice_data_x = self.sliceWindow(new_data)
-        slice_data_y = self.sliceWindow(new_data[self.output])
+        slice_data_y = self.sliceWindow(data[self.output])
         x_slice_data = np.array(slice_data_x)
         y_slice_data = np.array(slice_data_y)
 
