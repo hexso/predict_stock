@@ -16,7 +16,7 @@ class StockCal:
         x['SMA5'] = talib.SMA(x[close],5)
         start = x.iloc[0]['Date']
         end = x.iloc[-1]['Date']
-        nasdaq = pd.read_csv('NASDAQ.csv')
+        nasdaq = pd.read_csv('../NASDAQ.csv')
         nasdaq.index = nasdaq['DATE']
         x['NASDAQ'] = nasdaq.loc[start:end]['Change']
         func = lambda x: 0 if x<0.05 else 1
@@ -31,7 +31,7 @@ class StockCal:
         return x.fillna(0)
 
 if __name__ == '__main__':
-    df = pd.read_csv('stocks/samsung.csv')
+    df = pd.read_csv('../stocks/samsung.csv')
     stockCal = StockCal()
     data = stockCal.getStockInput(df)
     print(data)
