@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import time
+from utils.UtilStock import StockCal
 
 '''
 Linear를 이용한 주식 예측 모델
@@ -132,13 +133,14 @@ class GRUStock(nn.Module):
 
 if __name__ == '__main__':
     # #주식데이터로 보조지표를 만들어 낸다.
-    # stockCal = StockCal()
-    # for stock_name in stock_code.keys():
-    #     print(stock_name)
-    #     df = pd.read_csv('stocks/'+stock_name +'.csv')
-    #     df = stockCal.getStockInput(df)
-    #     df.to_csv('stocks/'+stock_name +'.csv')
-    data = pd.read_csv('stocks/samsung.csv')
+    stock_code = {'samsung':'00000000'}
+    stockCal = StockCal()
+    for stock_name in stock_code.keys():
+        print(stock_name)
+        df = pd.read_csv('stocks/'+stock_name +'.csv')
+        df = stockCal.getStockInput(df)
+        df.to_csv('stocks/'+stock_name +'.csv')
+    data = pd.read_csv('../stocks/samsung.csv')
     inputs = ['Open','High','Low','Close','Volume','Change']
     gru = GRUStock(origin=inputs, output='Change')
     gru.learn(gru, data)

@@ -13,7 +13,6 @@ class CoinData:
 
     #분단위로 Data를 받아온다.
     def GetFullData(self, stockcode='KRW-BTC', output='excel', when='2021-11-12 00:00:00'):
-
         now = dt.datetime.now()
         from_time = dt.datetime.strptime(when, "%Y-%m-%d %H:%M:%S")
         time_gap = now - from_time

@@ -2,6 +2,11 @@ import gym
 from gym import spaces
 import numpy as np
 
+'''
+강화학습모델 DQN을 이용한 코인 거래 딥러닝
+주식과 다른점은 코인의 경우 구매단위가 소수점이 가능하다.
+이를 위해 따로 구분
+'''
 ACCOUNT_BALANCE = 10000000
 MAX_TIME_STAMP = 10000
 LOOKBACK_WINDOW_SIZE = 60
@@ -42,19 +47,19 @@ class StockTradingEnv(gym.Env):
 
     def trade(self, action):
 
-        open_price = self.stock_data.loc[self.time_stamp, 'Open']
-        close_price = self.stock_data.loc[self.time_stamp, 'Close']
+        open_price = self.stock_data.loc[self.time_stamp, 'open']
+        close_price = self.stock_data.loc[self.time_stamp, 'close']
 
         action_type = action[0]
         amount = action[1]
 
         # 주식을 사는 행위
         if action_type < 1:
-            possible_amount = int(self.balance / open_price)
+            possible_amount = round(self.balance / open_price, 4)
             prev_cost = self.stock_amount * self.avg_price
 
             # 가능한 양에서 일정만큼만 산다.
-            buying_amount = int(possible_amount * amount)
+            buying_amount = round(possible_amount * amount,4)
             buying_cost = buying_amount * open_price
 
             self.balance -= buying_cost
@@ -77,7 +82,7 @@ class StockTradingEnv(gym.Env):
 
         # 주식을 파는 행위
         elif action_type < 2:
-            selling_amount = int(self.stock_amount * amount)
+            selling_amount = round(self.stock_amount * amount,4)
 
             self.stock_amount -= selling_amount
             self.balance += selling_amount * open_price
@@ -105,15 +110,15 @@ class StockTradingEnv(gym.Env):
         # Get the stock data points for the last 5 days and scale to between 0-1
         np.put(frame, [0, 4], [
             self.stock_data.loc[self.time_stamp: self.time_stamp +
-                                           LOOKBACK_WINDOW_SIZE, 'Open'].values / MAX_DIVIDE,
+                                           LOOKBACK_WINDOW_SIZE, 'open'].values / MAX_DIVIDE,
             self.stock_data.loc[self.time_stamp: self.time_stamp +
-                                           LOOKBACK_WINDOW_SIZE, 'High'].values / MAX_DIVIDE,
+                                           LOOKBACK_WINDOW_SIZE, 'high'].values / MAX_DIVIDE,
             self.stock_data.loc[self.time_stamp: self.time_stamp +
-                                           LOOKBACK_WINDOW_SIZE, 'Low'].values / MAX_DIVIDE,
+                                           LOOKBACK_WINDOW_SIZE, 'low'].values / MAX_DIVIDE,
             self.stock_data.loc[self.time_stamp: self.time_stamp +
-                                           LOOKBACK_WINDOW_SIZE, 'Close'].values / MAX_DIVIDE,
+                                           LOOKBACK_WINDOW_SIZE, 'close'].values / MAX_DIVIDE,
             self.stock_data.loc[self.time_stamp: self.time_stamp +
-                                           LOOKBACK_WINDOW_SIZE, 'Volume'].values / MAX_DIVIDE,
+                                           LOOKBACK_WINDOW_SIZE, 'volume'].values / MAX_DIVIDE,
         ])
 
         state = np.append(frame, [
@@ -136,12 +141,12 @@ class StockTradingEnv(gym.Env):
 
         state = self.getState()
         reward = self.total_budget * delay_modifier
-        done = self.total_budget < 0 or self.time_stamp >= len(self.stock_data.loc[:,'Open'].values)
+        done = self.total_budget < 0 or self.time_stamp >= len(self.stock_data.loc[:,'open'].values)
 
         return state, reward, done, {}
 
     def render(self, mode="human"):
-        print(self.history)
+        print(self.total_budget)
 
     def close(self):
         pass
@@ -150,10 +155,10 @@ if __name__ == '__main__':
     import pandas as pd
     from stable_baselines3.common.vec_env import DummyVecEnv
     from stable_baselines3 import PPO
-    df = pd.read_csv('stocks/samsung.csv')
+    df = pd.read_csv('../stocks/KRW-BTC.csv')
     env = DummyVecEnv([lambda: StockTradingEnv(df)])
     model = PPO("MlpPolicy", env, verbose= 1, device="cuda")
-    model.learn(total_timesteps=200000)
+    model.learn(total_timesteps=1)
     obs = env.reset()
     for i in range(2000):
         action, _states = model.predict(obs)

@@ -1,8 +1,6 @@
-import FinanceDataReader as fdr
-from LSTM import LSTMStock
-from Stock import StockCal
+from models.LSTM import LSTMStock
 import pandas as pd
-from GRU import GRUStock
+
 if __name__ == '__main__':
 
 

@@ -181,7 +181,7 @@ if __name__ == '__main__':
     # end = datetime.date.today()
     # df = pdr.DataReader('005930.KS', 'yahoo', start, end)
 
-    df = pd.read_csv('samsung.csv')
+    df = pd.read_csv('../stocks/samsung.csv')
     lstm = LSTMStock()
-    lstm.run(lstm,df)
+    lstm.learn(lstm,df)
     lstm.save(lstm)

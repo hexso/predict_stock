@@ -1,9 +1,6 @@
 import datetime
 
-import joblib
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -156,9 +153,7 @@ class testData(Dataset):
         return len(self.X_data)
 
 if __name__ == '__main__':
-    import FinanceDataReader as fdr
-    from LSTM import LSTMStock
-    from Stock import StockCal
+    from utils.UtilStock import StockCal
     import pandas as pd
 
     stock_code = {}
@@ -169,7 +164,7 @@ if __name__ == '__main__':
     #stock_code = {'samsung': '005930'}
 
     #주식리스트를 텍스트파일에서 불러온다.
-    with open('stocks.txt', 'r', encoding='cp949') as f:
+    with open('../stocks.txt', 'r', encoding='cp949') as f:
         datas = f.readlines()
         for data in datas:
             data = data.strip('\n').split(':')
@@ -197,7 +192,7 @@ if __name__ == '__main__':
         model.learn(model, x_train, y_train)
 
     # model = model.load('model.pt')
-    data = pd.read_csv('stocks/신일전자.csv')
+    data = pd.read_csv('../stocks/신일전자.csv')
     data = stockCal.getStockInput(data)
     x_train, x_test, y_train, y_test = model.dataProcessing(data)
     y_pred_list = model.predict(model, x_train, y_train)
