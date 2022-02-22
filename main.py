@@ -1,3 +1,4 @@
+import FinanceDataReader as fdr
 from models.LSTM import LSTMStock
 import pandas as pd
 
