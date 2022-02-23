@@ -1,5 +1,7 @@
 import pandas as pd
+import FinanceDataReader as fdr
 
+START_TIME = '2019'
 
 class DataHandler:
 
@@ -19,4 +21,17 @@ class DataHandler:
         if len(self.total_data) is self.index:
             return 0
         return self.total_data[self.index]
+
+    def download_stock_info(self):
+        with open('stocks.txt') as f:
+            stocks = f.readlines()
+            for stock in stocks:
+                try:
+                    data = stock.split(':')
+                    stock_data = fdr.DataReader(data[1].replace('\n',''), START_TIME)
+                    stock_data['Change'] = round(stock_data['Change']*100, 2)
+                    stock_data.to_csv('stocks/'+data[0]+'.csv')
+                    print("done {} {}".format(data[0], data[1]))
+                except:
+                    print("error {} {}".format(data[0], data[1]))
 
