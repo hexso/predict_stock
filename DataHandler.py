@@ -1,7 +1,11 @@
 import pandas as pd
 import FinanceDataReader as fdr
+from datetime import datetime
 
 START_TIME = '2019'
+START_DATE = '2019-01-01'
+END_DATE = datetime.now().strftime('%Y-%m-%d')
+
 
 class DataHandler:
 
@@ -9,10 +13,12 @@ class DataHandler:
         self.total_data = []
         self.index = -1
 
-    def load_data(self, path):
+    def load_data(self, path, start_time=START_DATE, end_time=END_DATE):
         try:
             self.total_data = pd.read_csv(path)
-            print("{} data is setted")
+            self.total_data['Date'] = pd.to_datetime(self.total_data['Date'])
+            self.total_data[self.total_data['Date'].between(start_time, end_time)]
+            print("{} data is setted".format(path))
         except:
             print("error load_data")
 
@@ -20,7 +26,7 @@ class DataHandler:
         self.index += 1
         if len(self.total_data) is self.index:
             return 0
-        return self.total_data[self.index]
+        return self.total_data.loc[self.index].to_dict()
 
     def download_stock_info(self):
         with open('stocks.txt') as f:
