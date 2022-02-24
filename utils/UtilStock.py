@@ -14,6 +14,7 @@ class StockCal:
         x['OBV'] = talib.OBV(x[close],volume=x[volume])
         x['SMA20'] = talib.SMA(x[close],20)
         x['SMA5'] = talib.SMA(x[close],5)
+        x['RSI'] = talib.RSI(x[close]).fillna(100)
         start = x.iloc[0]['Date']
         end = x.iloc[-1]['Date']
         nasdaq = pd.read_csv('NASDAQ.csv')
