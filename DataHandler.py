@@ -48,9 +48,10 @@ class DataHandler:
                 try:
                     data = stock.split(':')
                     stock_data = fdr.DataReader(data[1].replace('\n',''), START_TIME)
+                    stock_data = stock_data.fillna(0)
                     stock_data['Change'] = round(stock_data['Change']*100, 2)
                     stock_data.to_csv('stocks/'+data[0]+'.csv')
                     print("done {} {}".format(data[0], data[1]))
-                except:
-                    print("error {} {}".format(data[0], data[1]))
+                except Exception as e:
+                    print("error {} {} {}".format(e, data[0], data[1]))
 
