@@ -14,12 +14,10 @@ class StockCal:
         x['OBV'] = talib.OBV(x[close],volume=x[volume])
         x['SMA20'] = talib.SMA(x[close],20)
         x['SMA5'] = talib.SMA(x[close],5)
-        x['RSI'] = talib.RSI(x[close]).fillna(100)
+        x['RSI'] = talib.RSI(x[close],20).fillna(100)
+        x['OBVS'] = x['OBV'].ewm(20).mean() - x['OBV']
         start = x.iloc[0]['Date']
         end = x.iloc[-1]['Date']
-        nasdaq = pd.read_csv('NASDAQ.csv')
-        nasdaq.index = nasdaq['DATE']
-        x['NASDAQ'] = nasdaq.loc[start:end]['Change']
         func = lambda x: 0 if x<0.05 else 1
         x['Change5'] = x['Change'].apply(func)
         x['Change5_tmw'] = x['Change5'].shift(-1).fillna(0)

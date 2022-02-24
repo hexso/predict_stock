@@ -1,5 +1,6 @@
 import pandas as pd
 import FinanceDataReader as fdr
+from utils.UtilStock import StockCal
 from datetime import datetime
 import os
 
@@ -10,10 +11,13 @@ STOCK_FOLDER = 'stocks'
 
 class DataHandler:
 
-    def __init__(self):
+    def __init__(self, log=True):
         self.total_data = []
         self.data_index = -1
         self.stock_index = -1
+        self.stock_calculator = StockCal()
+        self.stock_name = ''
+        self.log = log
 
     def get_stocks_list(self, path='stocks'):
         self.stock_list = os.listdir(path)
@@ -22,24 +26,33 @@ class DataHandler:
         try:
             self.total_data = pd.read_csv(path)
             self.total_data['Date'] = pd.to_datetime(self.total_data['Date'])
-            self.total_data[self.total_data['Date'].between(start_time, end_time)]
-            print("{} data is setted".format(path))
-        except:
-            print("error load_data")
+            self.total_data = self.stock_calculator.getStockInput(self.total_data)
+            self.total_data = self.total_data[self.total_data['Date'].between(start_time, end_time)]
+            if self.log is True:
+                print("{} data is setted".format(path))
+        except Exception as e:
+            if self.log is True:
+                print("load_data error {}".format(e))
 
-    def set_next_stock(self, stock=None):
+    def set_next_stock(self, stock=None, start_time=START_DATE,end_time=END_DATE):
         if stock is not None:
             stock = stock + '.csv'
+            self.stock_name = stock
         else:
             self.stock_index += 1
+            if len(self.stock_list) <= self.stock_index:
+                return False
             stock = self.stock_list[self.stock_index]
-        self.load_data(STOCK_FOLDER+'/'+stock)
+            self.stock_name = stock[:-4]
+        self.load_data(STOCK_FOLDER+'/'+stock,start_time,end_time)
+        self.data_index = -1
 
     def next_data(self):
         self.data_index += 1
         if len(self.total_data) is self.data_index:
             return 0
-        return self.total_data.loc[self.data_index].to_dict()
+        self.total_data['Name'] = self.stock_name
+        return self.total_data.iloc[self.data_index].to_dict()
 
     def download_stock_info(self):
         with open('stocks.txt') as f:
