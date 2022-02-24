@@ -1,17 +1,22 @@
 import pandas as pd
 import FinanceDataReader as fdr
 from datetime import datetime
+import os
 
 START_TIME = '2019'
 START_DATE = '2019-01-01'
 END_DATE = datetime.now().strftime('%Y-%m-%d')
-
+STOCK_FOLDER = 'stocks'
 
 class DataHandler:
 
     def __init__(self):
         self.total_data = []
-        self.index = -1
+        self.data_index = -1
+        self.stock_index = -1
+
+    def get_stocks_list(self, path='stocks'):
+        self.stock_list = os.listdir(path)
 
     def load_data(self, path, start_time=START_DATE, end_time=END_DATE):
         try:
@@ -22,11 +27,19 @@ class DataHandler:
         except:
             print("error load_data")
 
+    def set_next_stock(self, stock=None):
+        if stock is not None:
+            stock = stock + '.csv'
+        else:
+            self.stock_index += 1
+            stock = self.stock_list[self.stock_index]
+        self.load_data(STOCK_FOLDER+'/'+stock)
+
     def next_data(self):
-        self.index += 1
-        if len(self.total_data) is self.index:
+        self.data_index += 1
+        if len(self.total_data) is self.data_index:
             return 0
-        return self.total_data.loc[self.index].to_dict()
+        return self.total_data.loc[self.data_index].to_dict()
 
     def download_stock_info(self):
         with open('stocks.txt') as f:
