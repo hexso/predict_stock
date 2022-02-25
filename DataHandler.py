@@ -3,11 +3,13 @@ import FinanceDataReader as fdr
 from utils.UtilStock import StockCal
 from datetime import datetime
 import os
+from threading import Thread
 
 START_TIME = '2019'
 START_DATE = '2019-01-01'
 END_DATE = datetime.now().strftime('%Y-%m-%d')
 STOCK_FOLDER = 'stocks'
+
 
 class DataHandler:
 
@@ -55,16 +57,28 @@ class DataHandler:
         return self.total_data.iloc[self.data_index].to_dict()
 
     def download_stock_info(self):
-        with open('stocks.txt') as f:
-            stocks = f.readlines()
+        def do_thread(stocks, *args):
             for stock in stocks:
                 try:
                     data = stock.split(':')
-                    stock_data = fdr.DataReader(data[1].replace('\n',''), START_TIME)
+                    stock_data = fdr.DataReader(data[1].replace('\n', ''), START_TIME)
                     stock_data = stock_data.fillna(0)
                     stock_data['Change'] = round(stock_data['Change']*100, 2)
                     stock_data.to_csv('stocks/'+data[0]+'.csv')
                     print("done {} {}".format(data[0], data[1]))
                 except Exception as e:
                     print("error {} {} {}".format(e, data[0], data[1]))
+
+        with open('stocks.txt') as f:
+            stocks = f.readlines()
+            stock1 = stocks[:int(len(stocks)/2)]
+            stock2 = stocks[int(len(stocks)/2):]
+            print(stock1)
+            print(stock2)
+            th1 = Thread(target=do_thread, args=(stock1,))
+            th2 = Thread(target=do_thread, args=(stock2,))
+            th1.start()
+            th2.start()
+            th1.join()
+            th2.join()
 
