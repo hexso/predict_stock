@@ -16,6 +16,8 @@ class StockCal:
         x['SMA5'] = talib.SMA(x[close],5)
         x['RSI'] = talib.RSI(x[close],20).fillna(100)
         x['OBVS'] = x['OBV'].ewm(20).mean() - x['OBV']
+        x['VOLUME_CHANGE'] = talib.ROCP(x[volume], timeperiod=1)
+        x['High_Change'] = talib.ROC(x[high], timeperiod=1)
         start = x.iloc[0]['Date']
         end = x.iloc[-1]['Date']
         func = lambda x: 0 if x<0.05 else 1
