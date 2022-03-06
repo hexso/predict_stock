@@ -69,7 +69,7 @@ class DataHandler:
                 except Exception as e:
                     print("error {} {} {}".format(e, data[0], data[1]))
 
-        with open('stocks.txt') as f:
+        with open('stocks.txt', encoding='cp949') as f:
             stocks = f.readlines()
             stock1 = stocks[:int(len(stocks)/2)]
             stock2 = stocks[int(len(stocks)/2):]
