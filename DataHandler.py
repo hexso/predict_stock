@@ -3,8 +3,8 @@ import FinanceDataReader as fdr
 from utils.UtilStock import StockCal
 from datetime import datetime
 import os
-from threading import Thread
 from queue import Queue
+import multiprocessing as mp
 
 START_TIME = '2019'
 START_DATE = '2019-01-01'
@@ -12,6 +12,24 @@ END_DATE = datetime.now().strftime('%Y-%m-%d')
 STOCK_FOLDER = 'stocks'
 THREAD_CNT = 3
 
+
+def scrape_stock_data(stock_queue: Queue):
+    while True:
+        try:
+            stock = stock_queue.get_nowait()
+        except:
+            print('Thread done')
+            break
+
+        try:
+            data = stock.split(':')
+            stock_data = fdr.DataReader(data[1].replace('\n', ''), START_TIME)
+            stock_data = stock_data.fillna(0)
+            stock_data['Change'] = round(stock_data['Change'] * 100, 2)
+            stock_data.to_csv('stocks/' + data[0] + '.csv')
+            print("done {} {}".format(data[0], data[1]))
+        except Exception as e:
+            print("error {} {} {}".format(e, data[0], data[1]))
 
 class DataHandler:
 
@@ -59,40 +77,25 @@ class DataHandler:
         return self.total_data.iloc[self.data_index].to_dict()
 
     def download_stock_info(self):
-        def do_thread(stock_queue:Queue, *args):
-            while True:
-                try:
-                    stock = stock_queue.get_nowait()
-                except:
-                    print('Thread done')
-                    break
 
-                try:
-                    data = stock.split(':')
-                    stock_data = fdr.DataReader(data[1].replace('\n', ''), START_TIME)
-                    stock_data = stock_data.fillna(0)
-                    stock_data['Change'] = round(stock_data['Change']*100, 2)
-                    stock_data.to_csv('stocks/'+data[0]+'.csv')
-                    print("done {} {}".format(data[0], data[1]))
-                except Exception as e:
-                    print("error {} {} {}".format(e, data[0], data[1]))
 
         with open('stocks.txt', encoding='cp949') as f:
             stocks = f.readlines()
 
+        manager = mp.Manager()
+        stock_queue = manager.Queue()
+        mps = []
 
-        stock_queue = Queue()
-        threads = []
         for stock in stocks:
             stock_queue.put(stock)
 
-        for thread in range(THREAD_CNT):
-            th = Thread(target=do_thread, args=(stock_queue,))
-            threads.append(th)
+        for process in range(THREAD_CNT):
+            proc = mp.Process(target=scrape_stock_data, args=(stock_queue,))
+            mps.append(proc)
 
-        for thread in threads:
-            thread.start()
+        for proc in mps:
+            proc.start()
 
-        for thread in threads:
-            thread.join()
+        for proc in mps:
+            proc.join()
 
