@@ -131,6 +131,8 @@ class UpbitTrade:
                 candle_acc_trade_price, candle_acc_trade_volume,
                 change_price, change_rate
         '''
+        if type(count) is not int:
+            count = int(count)
         data=pyupbit.get_ohlcv(stockcode, interval=unit, count=count, to=start_time)
         return data
 
