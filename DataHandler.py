@@ -4,11 +4,13 @@ from utils.UtilStock import StockCal
 from datetime import datetime
 import os
 from threading import Thread
+from queue import Queue
 
 START_TIME = '2019'
 START_DATE = '2019-01-01'
 END_DATE = datetime.now().strftime('%Y-%m-%d')
 STOCK_FOLDER = 'stocks'
+THREAD_CNT = 3
 
 
 class DataHandler:
@@ -57,8 +59,14 @@ class DataHandler:
         return self.total_data.iloc[self.data_index].to_dict()
 
     def download_stock_info(self):
-        def do_thread(stocks, *args):
-            for stock in stocks:
+        def do_thread(stock_queue:Queue, *args):
+            while True:
+                try:
+                    stock = stock_queue.get_nowait()
+                except:
+                    print('Thread done')
+                    break
+
                 try:
                     data = stock.split(':')
                     stock_data = fdr.DataReader(data[1].replace('\n', ''), START_TIME)
@@ -71,14 +79,20 @@ class DataHandler:
 
         with open('stocks.txt', encoding='cp949') as f:
             stocks = f.readlines()
-            stock1 = stocks[:int(len(stocks)/2)]
-            stock2 = stocks[int(len(stocks)/2):]
-            print(stock1)
-            print(stock2)
-            th1 = Thread(target=do_thread, args=(stock1,))
-            th2 = Thread(target=do_thread, args=(stock2,))
-            th1.start()
-            th2.start()
-            th1.join()
-            th2.join()
+
+
+        stock_queue = Queue()
+        threads = []
+        for stock in stocks:
+            stock_queue.put(stock)
+
+        for thread in range(THREAD_CNT):
+            th = Thread(target=do_thread, args=(stock_queue,))
+            threads.append(th)
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
 
