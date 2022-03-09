@@ -25,7 +25,9 @@ def scrape_stock_data(stock_queue: Queue):
             data = stock.split(':')
             stock_data = fdr.DataReader(data[1].replace('\n', ''), START_TIME)
             stock_data = stock_data.fillna(0)
-            stock_data['Change'] = round(stock_data['Change'] * 100, 2)
+            stock_data.columns = map(str.lower, stock_data.columns)
+
+            stock_data['change'] = round(stock_data['change'] * 100, 2)
             stock_data.to_csv('stocks/' + data[0] + '.csv')
             print("done {} {}".format(data[0], data[1]))
         except Exception as e:
@@ -49,12 +51,11 @@ class DataHandler:
             self.total_data = pd.read_csv(path)
             self.total_data['Date'] = pd.to_datetime(self.total_data['Date'])
             self.total_data = self.stock_calculator.getStockInput(self.total_data)
-            self.total_data = self.total_data[self.total_data['Date'].between(start_time, end_time)]
+            self.total_data = self.total_data[self.total_data['date'].between(start_time, end_time)]
             if self.log is True:
                 print("{} data is setted".format(path))
         except Exception as e:
-            if self.log is True:
-                print("load_data error {}".format(e))
+            print("load_data error {}".format(e))
 
     def set_next_stock(self, stock=None, start_time=START_DATE,end_time=END_DATE):
         if stock is not None:
@@ -73,7 +74,7 @@ class DataHandler:
         self.data_index += 1
         if len(self.total_data) is self.data_index:
             return 0
-        self.total_data['Name'] = self.stock_name
+        self.total_data['name'] = self.stock_name
         return self.total_data.iloc[self.data_index].to_dict()
 
     def download_stock_info(self):

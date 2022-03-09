@@ -1,8 +1,10 @@
+#-*- coding: utf-8 -*-
 from DataHandler import DataHandler
 from datetime import datetime
 from models.RSITrade import RSIAlgorithm
 from models.VolumeChange import VolumeChange
 from utils.telegram_bot import TelegramBot
+from utils.CoinData import CoinData
 import argparse
 
 if __name__ == '__main__':
@@ -13,6 +15,10 @@ if __name__ == '__main__':
     parser.add_argument('--stock', action='store_true')
     parser.add_argument('--coin', action='store_true')
     args = parser.parse_args()
+
+    if args.coin is True:
+        coin_data = CoinData()
+        coin_data.download_all_coin_data()
 
     if args.stock is True:
         data_handler = DataHandler(False)

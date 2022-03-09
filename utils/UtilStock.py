@@ -6,29 +6,30 @@ class StockCal:
         pass
 
 
-    def getStockInput(self, x, close='Close', bollinger=20, volume='Volume', high='High', low='Low'):
-        x.index = x['Date']
-        x['MACD'] = talib.MACD(x[close])[0]
-        x['STOCHK'], x['STOCHD'] = talib.STOCH(high=x[high], low=x[low], close=x[close])
-        x['BUPPER'], x['BMIDDLE'],x['BLOWER'] = talib.BBANDS(x[close],bollinger)
-        x['OBV'] = talib.OBV(x[close],volume=x[volume])
-        x['SMA20'] = talib.SMA(x[close],20)
-        x['SMA5'] = talib.SMA(x[close],5)
-        x['RSI'] = talib.RSI(x[close],20).fillna(100)
+    def getStockInput(self, x, bollinger=20):
+        x.columns = map(str.lower, x.columns)
+        x.index = x['date']
+        x['MACD'] = talib.MACD(x['close'])[0]
+        x['STOCHK'], x['STOCHD'] = talib.STOCH(high=x['high'], low=x['low'], close=x['close'])
+        x['BUPPER'], x['BMIDDLE'],x['BLOWER'] = talib.BBANDS(x['close'],bollinger)
+        x['OBV'] = talib.OBV(x['close'],volume=x['volume'])
+        x['SMA20'] = talib.SMA(x['close'],20)
+        x['SMA5'] = talib.SMA(x['close'],5)
+        x['RSI'] = talib.RSI(x['close'],20).fillna(100)
         x['OBVS'] = x['OBV'].ewm(20).mean() - x['OBV']
-        x['VOLUME_CHANGE'] = talib.ROCP(x[volume], timeperiod=1)
-        x['High_Change'] = talib.ROC(x[high], timeperiod=1)
-        start = x.iloc[0]['Date']
-        end = x.iloc[-1]['Date']
-        func = lambda x: 0 if x<0.05 else 1
-        x['Change5'] = x['Change'].apply(func)
-        x['Change5_tmw'] = x['Change5'].shift(-1).fillna(0)
-        func = lambda x: 0 if x < 0.03 else 1
-        x['Change3'] = x['Change'].apply(func)
-        x['Change3_tmw'] = x['Change3'].shift(-1).fillna(0)
-        positive_func = lambda  x: 0 if x<0 else 1
-        x['up'] = x['Change'].apply(positive_func)
-        x['tmw_up'] = x['Change'].apply(positive_func).shift(-1).fillna(0)
+        x['VOLUME_CHANGE'] = talib.ROCP(x['volume'], timeperiod=1)
+        x['HIGH_CHANGE'] = talib.ROC(x['high'], timeperiod=1)
+        # start = x.iloc[0]['date']
+        # end = x.iloc[-1]['date']
+        # func = lambda x: 0 if x<0.05 else 1
+        # x['CHANGE5'] = x['CHANGE5'].apply(func)
+        # x['CHANGE5_TMW'] = x['CHANGE5'].shift(-1).fillna(0)
+        # func = lambda x: 0 if x < 0.03 else 1
+        # x['CHANGE3'] = x['change'].apply(func)
+        # x['CHANGE3_TMW'] = x['CHANGE3'].shift(-1).fillna(0)
+        # positive_func = lambda  x: 0 if x<0 else 1
+        # x['UP'] = x['change'].apply(positive_func)
+        # x['TMW_UP'] = x['change'].apply(positive_func).shift(-1).fillna(0)
         return x.fillna(0)
 
 if __name__ == '__main__':

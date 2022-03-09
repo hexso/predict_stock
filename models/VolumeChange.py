@@ -21,9 +21,9 @@ class VolumeChange:
         stock_list = list()
         for data in datas:
             if data['VOLUME_CHANGE'] > VOLUME_CHANGE_RATE and \
-                    data['High_Change'] < CHANGE_RATE and data['High_Change'] > -CHANGE_RATE and \
-                data['Volume']*data['Open'] > TOTAL_TRADE_AMOUNT:
-                stock_list.append({"Name" : data['Name'], "VOLUME_CHANGE" : data['VOLUME_CHANGE'], "High_Change" : data['High_Change']})
+                    data['HIGH_CHANGE'] < CHANGE_RATE and data['HIGH_CHANGE'] > -CHANGE_RATE and \
+                data['volume']*data['open'] > TOTAL_TRADE_AMOUNT:
+                stock_list.append({"name" : data['name'], "VOLUME_CHANGE": data['VOLUME_CHANGE'], "HIGH_CHANGE" : data['HIGH_CHANGE']})
 
         return stock_list
 

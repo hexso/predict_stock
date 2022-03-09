@@ -1,9 +1,6 @@
-import requests
 import pyupbit
-from datetime import date
 from time import sleep
 from functools import wraps
-import json
 
 WAITTIME=0.1
 LOGFILE='upbit_trade.txt'
@@ -17,7 +14,6 @@ def SleepTime(func):
     return wrapper
 
 def WithLog(func):
-    import logging
     import logging.handlers
 
     logger = logging.getLogger(__name__)
@@ -39,6 +35,36 @@ def WithLog(func):
         return result
 
     return wrapper
+
+
+@SleepTime
+def GetStocksList(money="KRW"):
+    t_stocks_list = pyupbit.get_tickers(fiat=money)
+    print('getbal = {}'.format(t_stocks_list))
+    return t_stocks_list
+
+@SleepTime
+def GetCandle(stockcode, unit='minute1', count=1, start_time = None):
+    '''
+
+    :param stockcode: input stocks tickers. ex) KRW-BTC
+    :return: dictionary is in list.
+            opening_price, high_price, low_price, trade_price,
+            candle_acc_trade_price, candle_acc_trade_volume,
+            change_price, change_rate
+    '''
+    if type(count) is not int:
+        count = int(count)
+    data=pyupbit.get_ohlcv(stockcode, interval=unit, count=count, to=start_time)
+    return data
+
+@SleepTime
+def GetCurrentPrice(stockcode):
+    return pyupbit.get_current_price(stockcode)
+
+def GetOrderBook(stockcode):
+    return pyupbit.get_orderbook(stockcode)
+
 
 class UpbitTrade:
 
@@ -115,33 +141,6 @@ class UpbitTrade:
     def CancelOrder(self, uuid):
         return UpbitTrade.upbit.cancel_order(uuid)
 
-    @SleepTime
-    def GetStocksList(self, money="KRW"):
-        t_stocks_list = pyupbit.get_tickers(fiat=money)
-        print('getbal = {}'.format(t_stocks_list))
-        return t_stocks_list
-
-    @SleepTime
-    def GetCandle(self, stockcode, unit='minute1', count=1, start_time = None):
-        '''
-
-        :param stockcode: input stocks tickers. ex) KRW-BTC
-        :return: dictionary is in list.
-                opening_price, high_price, low_price, trade_price,
-                candle_acc_trade_price, candle_acc_trade_volume,
-                change_price, change_rate
-        '''
-        if type(count) is not int:
-            count = int(count)
-        data=pyupbit.get_ohlcv(stockcode, interval=unit, count=count, to=start_time)
-        return data
-
-    @SleepTime
-    def GetCurrentPrice(self, stockcode):
-        return pyupbit.get_current_price(stockcode)
-
-    def GetOrderBook(self, stockcode):
-        return pyupbit.get_orderbook(stockcode)
 
 if __name__ == '__main__':
     tr = UpbitTrade()

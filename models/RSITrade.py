@@ -18,7 +18,7 @@ class RSIAlgorithm:
         stock_list = list()
         for data in datas:
             if data['OBVS'] > 0 and data['RSI'] < 30:
-                stock_list.append({"Name" : data['Name'], "OBVS" : data['OBVS'], "RSI" : data['RSI']})
+                stock_list.append({"name" : data['name'], "OBVS" : data['OBVS'], "RSI" : data['RSI']})
 
         return stock_list
 
