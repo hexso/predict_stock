@@ -44,7 +44,7 @@ class CoinData:
             os.makedirs('coins')
 
     #분단위로 Data를 받아온다.
-    def GetFullData(self, coin_code='KRW-BTC', time_unit=240, output='excel', when='2021-11-12'):
+    def GetFullData(self, coin_code='KRW-BTC', time_unit=240, output='', when='2021-11-12'):
         from_time = dt.datetime.strptime(when, "%Y-%m-%d")
         time_gap = NOW - from_time
         cnt = (time_gap.days*24*60 + time_gap.seconds/60)/time_unit
@@ -52,9 +52,6 @@ class CoinData:
         data = GetCandle(coin_code, unit=TIME_UNIT[time_unit], count=cnt)
         if output == 'excel':
             data.to_csv('coins/' + coin_code+'.csv')
-        else:
-            print('지원하지 않는 형식입니다.')
-            exit(-1)
         return data
 
     def GetCoinLive(self, coin='KRW-BTC'):
