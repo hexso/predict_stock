@@ -180,7 +180,7 @@ if __name__ == '__main__':
     for stock_name in stock_code.keys():
         print(stock_name)
         df = pd.read_csv('stocks/'+stock_name +'.csv')
-        df = stockCal.getStockInput(df)
+        df = stockCal.get_stock_indicators(df)
         df.to_csv('stocks/'+stock_name +'.csv', index=None)
 
     inputs = ['Volume', 'MACD', 'OBV', 'SMA20', 'SMA5', 'STOCHK', 'STOCHD', 'BUPPER', 'BMIDDLE', 'BLOWER', 'up']
@@ -193,7 +193,7 @@ if __name__ == '__main__':
 
     # model = model.load('model.pt')
     data = pd.read_csv('../stocks/신일전자.csv')
-    data = stockCal.getStockInput(data)
+    data = stockCal.get_stock_indicators(data)
     x_train, x_test, y_train, y_test = model.dataProcessing(data)
     y_pred_list = model.predict(model, x_train, y_train)
 

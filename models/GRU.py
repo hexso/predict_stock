@@ -138,7 +138,7 @@ if __name__ == '__main__':
     for stock_name in stock_code.keys():
         print(stock_name)
         df = pd.read_csv('stocks/'+stock_name +'.csv')
-        df = stockCal.getStockInput(df)
+        df = stockCal.get_stock_indicators(df)
         df.to_csv('stocks/'+stock_name +'.csv')
     data = pd.read_csv('../stocks/samsung.csv')
     inputs = ['Open','High','Low','Close','Volume','Change']

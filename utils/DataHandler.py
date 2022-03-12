@@ -50,7 +50,7 @@ class DataHandler:
         try:
             self.total_data = pd.read_csv(path)
             self.total_data['Date'] = pd.to_datetime(self.total_data['Date'])
-            self.total_data = self.stock_calculator.getStockInput(self.total_data)
+            self.total_data = self.stock_calculator.get_stock_indicators(self.total_data)
             self.total_data = self.total_data[self.total_data['date'].between(start_time, end_time)]
             if self.log is True:
                 print("{} data is setted".format(path))

@@ -5,8 +5,7 @@ class StockCal:
     def __init__(self):
         pass
 
-
-    def getStockInput(self, x, bollinger=20):
+    def get_stock_indicators(self, x, bollinger=20):
         x.columns = map(str.lower, x.columns)
         x.index = x['date']
         x['MACD'] = talib.MACD(x['close'])[0]
@@ -19,6 +18,13 @@ class StockCal:
         x['OBVS'] = x['OBV'].ewm(20).mean() - x['OBV']
         x['VOLUME_CHANGE'] = talib.ROCP(x['volume'], timeperiod=1)
         x['HIGH_CHANGE'] = talib.ROC(x['high'], timeperiod=1)
+        x['MFI'] = talib.MFI(x['high'], x['low'], x['close'], x['volume'])
+        x['PDI'] = talib.PLUS_DI(x['high'], x['low'], x['close'])
+        x['MDI'] = talib.MINUS_DI(x['high'], x['low'], x['close'])
+        x['ADX'] = talib.ADX(x['high'], x['low'], x['close'])
+        x['APO'] = talib.APO(x['close'])
+        x['UBBAND'], x['MBBAND'], x['LBBAND'] = talib.BBANDS(x['close'])
+        x['PPO'] = talib.PPO(x['close'])
         # start = x.iloc[0]['date']
         # end = x.iloc[-1]['date']
         # func = lambda x: 0 if x<0.05 else 1
@@ -33,7 +39,7 @@ class StockCal:
         return x.fillna(0)
 
 if __name__ == '__main__':
-    df = pd.read_csv('../stocks/samsung.csv')
+    df = pd.read_csv('../stocks/삼성전자.csv')
     stockCal = StockCal()
-    data = stockCal.getStockInput(df)
+    data = stockCal.get_stock_indicators(df)
     print(data)
