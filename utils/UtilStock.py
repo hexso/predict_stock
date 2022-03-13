@@ -7,7 +7,8 @@ class StockCal:
 
     def get_stock_indicators(self, x, bollinger=20):
         x.columns = map(str.lower, x.columns)
-        x.index = x['date']
+        if 'date' in x.columns.array:
+            x.index = x['date']
         x['MACD'] = talib.MACD(x['close'])[0]
         x['STOCHK'], x['STOCHD'] = talib.STOCH(high=x['high'], low=x['low'], close=x['close'])
         x['BUPPER'], x['BMIDDLE'],x['BLOWER'] = talib.BBANDS(x['close'],bollinger)
