@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     if args.stock is True:
         data_handler = DataHandler(False)
-        #data_handler.download_stock_info()
+        data_handler.download_stock_info()
         data_handler.get_stocks_list()
         today_date = datetime.now().strftime('%Y-%m-%d')
         today_stock_data = list()
