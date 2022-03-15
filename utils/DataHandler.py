@@ -33,6 +33,7 @@ def scrape_stock_data(stock_queue: Queue):
         except Exception as e:
             print("error {} {} {}".format(e, data[0], data[1]))
 
+
 class DataHandler:
 
     def __init__(self, log=True):
@@ -78,7 +79,6 @@ class DataHandler:
         return self.total_data.iloc[self.data_index].to_dict()
 
     def download_stock_info(self):
-
         with open('stocks.txt', encoding='cp949') as f:
             stocks = f.readlines()
 
@@ -99,3 +99,11 @@ class DataHandler:
         for proc in mps:
             proc.join()
 
+    def get_stock_info(self, stock_code, start_time=START_DATE, end_time=END_DATE):
+        stock_data = fdr.DataReader(stock_code, START_TIME)
+        stock_data = stock_data.fillna(0)
+        stock_data.columns = map(str.lower, stock_data.columns)
+        stock_data['date'] = stock_data.index
+        stock_data['change'] = round(stock_data['change'] * 100, 2)
+        stock_data = stock_data[stock_data['date'].between(start_time, end_time)]
+        return stock_data

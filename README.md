@@ -1,7 +1,10 @@
-python main.py --simul --coin --mute --stock
+python main.py --simul --coin --mute --stock --stocksimul
 
 
---simul : 시뮬레이션을 돌리는 옵션. coins.txt에 있는 리스트들의 코인들의 Data를 받는다.
+--coinsimul : 시뮬레이션을 돌리는 옵션. coins.txt에 있는 리스트들의 코인들의 Data를 받는다.
+          해당 Data들을 바탕으로 종료시 총 수익을 계산해준다.
+
+--stocksimul : 시뮬레이션을 돌리는 옵션. stocks.txt에 있는 주식 Data를 받는다.
           해당 Data들을 바탕으로 종료시 총 수익을 계산해준다.
 
 --coin : coins.txt의 코인들을 참고하여 data를 받는다.

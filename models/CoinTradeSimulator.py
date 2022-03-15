@@ -1,5 +1,5 @@
 '''
-차트 보조지표들을 이용해서 시뮬레이션을 해본다.
+코인 차트 보조지표들을 이용해서 시뮬레이션을 해본다.
 '''
 
 from utils.CoinData import CoinData
@@ -10,8 +10,7 @@ MFI_UPPER = 70
 MFI_LOWER = 30
 
 
-
-class ChartTradeSimulator:
+class CoinTradeSimulator:
     def __init__(self):
         self.data_scraper = CoinData()
         self.data_calculator = StockCal()
@@ -126,7 +125,7 @@ class ChartTradeSimulator:
                 f.write(str(self.account) + '\n')
 
 if __name__ == '__main__':
-    simulator = ChartTradeSimulator()
+    simulator = CoinTradeSimulator()
     simulator.set_data(coin='KRW-BTC', time_stamp='2022-01-22')
-    simulator.start('simulator_output.txt')
+    simulator.start('coin_simulator_output.txt')
 

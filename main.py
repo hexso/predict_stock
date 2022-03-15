@@ -5,7 +5,8 @@ from models.RSITrade import RSIAlgorithm
 from models.VolumeChange import VolumeChange
 from utils.telegram_bot import TelegramBot
 from utils.CoinData import CoinData
-from models.ChartTrade import ChartTradeSimulator
+from models.CoinTradeSimulator import CoinTradeSimulator
+from models.StockTradeSimulator import StockTradeSimulator
 import argparse
 
 if __name__ == '__main__':
@@ -14,13 +15,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--stock', action='store_true')
     parser.add_argument('--coin', action='store_true')
-    parser.add_argument('--simul', action='store_true')
+    parser.add_argument('--coinsimul', action='store_true')
+    parser.add_argument('--stocksimul', action='store_true')
     parser.add_argument('--mute', action='store_true')
     args = parser.parse_args()
 
     if args.mute is True:
         tgBot = TelegramBot()
-
 
     if args.stock is True:
         data_handler = DataHandler(False)
@@ -67,14 +68,24 @@ if __name__ == '__main__':
         coin_data = CoinData()
         coin_data.download_all_coin_data()
 
-    if args.simul is True:
+    if args.coinsimul is True:
         with open('coins.txt', encoding='cp949') as f:
             stocks = f.readlines()
             for stock in stocks:
                 stock = stock.strip()
-                simulator = ChartTradeSimulator()
+                simulator = CoinTradeSimulator()
                 simulator.set_data(coin=stock, time_stamp='2022-01-22')
-                simulator.start('simulator_output.txt')
+                simulator.start('coin_simulator_output.txt')
+
+    if args.stocksimul is True:
+        with open('stocks.txt', encoding='cp949') as f:
+            stocks = f.readlines()
+            for stock in stocks:
+                stock = stock.strip()
+                data = stock.split(':')
+                simulator = StockTradeSimulator()
+                simulator.set_data(stock_code=data[1], start_time='2022-01-22')
+                simulator.start('stock_simulator_output.txt')
 
 '''
     # # #주식데이터로 보조지표를 만들어 낸다.
