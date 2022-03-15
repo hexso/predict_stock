@@ -39,16 +39,19 @@ class ChartTradeSimulator:
         return True
 
     def catch_sell_signal(self, data):
-        if data['MFI'] < MFI_UPPER:
-            return False
+        if data['MFI'] > MFI_UPPER:
+            print('MFI {}가 MFIUPPER : {}를 초과했습니다. 매도시점입니다.'.format(data['MFI'], MFI_UPPER))
+            return True
 
-        if data['MDI'] < data['ADX'] or data['MDI'] < data['PDI']:
-            return False
+        if data['MDI'] > data['ADX'] and data['MDI'] > data['PDI']:
+            print('MDI : {}, PDI : {}, ADX : {}  매도시점입니다.'.format(data['MDI'], data['PDI'], data['ADX']))
+            return True
 
-        if data['UBBAND'] > data['high']:
-            return False
+        if data['UBBAND'] < data['high']:
+            print('UBBAND {}를 high {}가 넘어섰습니다. 매도 시점입니다.'.format(data['UBBAND'], data['high']))
+            return True
 
-        return True
+        return False
 
     def buy_coin(self, data, amount=None):
         for coin_data in self.account:
@@ -82,16 +85,16 @@ class ChartTradeSimulator:
                     print('판매 하려는 수량이 갖고 있는 수량에 비해 많습니다.')
                     break
                 selling_price = max(int((data['high'] + data['low'])/2), int((data['open'] + data['high'])/2))
-                profit_price = (selling_price * amount)-(data['avg_price'] * amount)
+                profit_price = (selling_price * amount)-(coin_data['avg_price'] * amount)
                 print("평단가는 {}, 판매가는 {} , 판매량 {} , 총 수익은 {}입니다."
-                      .format(data['avg_price'], selling_price, amount, profit_price))
+                      .format(coin_data['avg_price'], selling_price, amount, profit_price))
                 self.balance += selling_price * amount
                 coin_data['amount'] -= amount
+                if coin_data['amount'] == 0:
+                    coin_data['avg_price'] = 0
                 break
 
-
-
-    def start(self):
+    def start(self, output=None):
         if self.data is None:
             print('set_data를 통해 data를 먼저 선택해줘야 합니다.')
             print("ex: set_data(coin='KRW-BTC',time_stamp='2022-01-22')")
@@ -101,25 +104,29 @@ class ChartTradeSimulator:
 
         for i in range(len(self.data)):
             coin_data = self.data.iloc[i]
-            if self.catch_buy_signal(coin_data) is True\
-                    and self.behavior_flag is 'buy':
+            if self.behavior_flag is 'buy'\
+                    and self.catch_buy_signal(coin_data) is True:
                 print('매수시점입니다.')
                 self.buy_coin(coin_data)
                 self.behavior_flag = 'sell'
 
-            if self.catch_sell_signal(coin_data) is True\
-                    and self.behavior_flag is 'sell':
+            if self.behavior_flag is 'sell'\
+                    and self.catch_sell_signal(coin_data) is True:
                 print('매도 시점입니다.')
                 self.sell_coin(coin_data)
                 self.behavior_flag = 'buy'
 
 
-        print('시뮬레이터 후 계좌잔고는 {}, 총 수익률은 {}입니다.'.format(self.balance, round(self.balance/START_BALANCE*100,2)))
+        print('시뮬레이터 후 계좌잔고는 {}, 총 수익률은 {}입니다.'.format(self.balance, round(self.balance/START_BALANCE*100, 2) - 100))
         print('가지고 있는 코인')
         print(self.account)
+        if output is not None:
+            with open(output, 'a') as f:
+                f.write('시뮬레이터 후 계좌잔고는 {}, 총 수익률은 {}입니다.\n'.format(self.balance, round(self.balance/START_BALANCE*100, 2) - 100))
+                f.write(str(self.account) + '\n')
 
 if __name__ == '__main__':
     simulator = ChartTradeSimulator()
     simulator.set_data(coin='KRW-BTC', time_stamp='2022-01-22')
-    simulator.start()
+    simulator.start('simulator_output.txt')
 

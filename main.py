@@ -1,24 +1,26 @@
 #-*- coding: utf-8 -*-
-from DataHandler import DataHandler
+from utils.DataHandler import DataHandler
 from datetime import datetime
 from models.RSITrade import RSIAlgorithm
 from models.VolumeChange import VolumeChange
 from utils.telegram_bot import TelegramBot
 from utils.CoinData import CoinData
+from models.ChartTrade import ChartTradeSimulator
 import argparse
 
 if __name__ == '__main__':
 
-    tgBot = TelegramBot()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--stock', action='store_true')
     parser.add_argument('--coin', action='store_true')
+    parser.add_argument('--simul', action='store_true')
+    parser.add_argument('--mute', action='store_true')
     args = parser.parse_args()
 
-    if args.coin is True:
-        coin_data = CoinData()
-        coin_data.download_all_coin_data()
+    if args.mute is True:
+        tgBot = TelegramBot()
+
 
     if args.stock is True:
         data_handler = DataHandler(False)
@@ -60,6 +62,19 @@ if __name__ == '__main__':
         result = str(volume_stocks)
         for i in range(0,len(result),1000):
             tgBot.sendmsg(result[i:i+1000])
+
+    if args.coin is True:
+        coin_data = CoinData()
+        coin_data.download_all_coin_data()
+
+    if args.simul is True:
+        with open('coins.txt', encoding='cp949') as f:
+            stocks = f.readlines()
+            for stock in stocks:
+                stock = stock.strip()
+                simulator = ChartTradeSimulator()
+                simulator.set_data(coin=stock, time_stamp='2022-01-22')
+                simulator.start('simulator_output.txt')
 
 '''
     # # #주식데이터로 보조지표를 만들어 낸다.
