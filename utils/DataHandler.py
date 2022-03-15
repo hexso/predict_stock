@@ -79,7 +79,7 @@ class DataHandler:
 
     def download_stock_info(self):
 
-        with open('../stocks.txt', encoding='cp949') as f:
+        with open('stocks.txt', encoding='cp949') as f:
             stocks = f.readlines()
 
         manager = mp.Manager()
