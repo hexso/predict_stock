@@ -11,7 +11,7 @@ import argparse
 
 if __name__ == '__main__':
 
-
+    tgBot = None
     parser = argparse.ArgumentParser()
     parser.add_argument('--stock', action='store_true')
     parser.add_argument('--coin', action='store_true')
@@ -20,12 +20,12 @@ if __name__ == '__main__':
     parser.add_argument('--mute', action='store_true')
     args = parser.parse_args()
 
-    if args.mute is True:
+    if args.mute is False:
         tgBot = TelegramBot()
 
     if args.stock is True:
         data_handler = DataHandler(False)
-        data_handler.download_stock_info()
+        #data_handler.download_stock_info()
         data_handler.get_stocks_list()
         today_date = datetime.now().strftime('%Y-%m-%d')
         today_stock_data = list()
@@ -40,9 +40,19 @@ if __name__ == '__main__':
             if i % 100 is 0:
                 print(i)
         algorithm = RSIAlgorithm()
-        algorithm2 = VolumeChange()
         rsi_stocks = algorithm.catch_stocks(today_stock_data)
+
+        algorithm2 = VolumeChange()
         volume_stocks = algorithm2.catch_stocks(today_stock_data)
+
+
+        algorithm3 = StockTradeSimulator()
+        simul_stocks = list()
+        for stock in today_stock_data:
+            if algorithm3.catch_buy_signal(stock) is True:
+                simul_stocks.append(stock['name'])
+
+
         with open('outputs/'+today_date+'_output.txt','w') as f:
             for stock in rsi_stocks:
                 value = [str(i) for i in stock.values()]
@@ -57,12 +67,19 @@ if __name__ == '__main__':
         print('done')
 
         result = str(rsi_stocks)
-        for i in range(0,len(result),1000):
-            tgBot.sendmsg(result[i:i+1000])
+        if args.mute is False:
+            for i in range(0,len(result),1000):
+                tgBot.sendmsg(result[i:i+1000])
 
-        result = str(volume_stocks)
-        for i in range(0,len(result),1000):
-            tgBot.sendmsg(result[i:i+1000])
+            result = str(volume_stocks)
+            tgBot.sendmsg("=======================OBV========================================")
+            for i in range(0,len(result),1000):
+                tgBot.sendmsg(result[i:i+1000])
+
+            result = str(simul_stocks)
+            tgBot.sendmsg("Stock Simul 결과")
+            for i in range(0,len(result),1000):
+                tgBot.sendmsg(result[i:i+1000])
 
     if args.coin is True:
         coin_data = CoinData()
