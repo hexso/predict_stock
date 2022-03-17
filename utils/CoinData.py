@@ -6,6 +6,7 @@ import os.path
 from utils.upbit import UpbitTrade, GetCandle
 import datetime as dt
 import multiprocessing as mp
+from utils.UtilStock import StockCal
 
 THREAD_CNT = 1
 NOW = dt.datetime.now()
@@ -40,6 +41,7 @@ class CoinData:
 
     def __init__(self):
         self.trader = UpbitTrade()
+        self.cal = StockCal()
         if not os.path.exists('coins'):
             os.makedirs('coins')
 
@@ -52,7 +54,19 @@ class CoinData:
         data = GetCandle(coin_code, unit=TIME_UNIT[time_unit], count=cnt)
         if output == 'excel':
             data.to_csv('coins/' + coin_code+'.csv')
+        data = self.cal.get_stock_indicators(data)
         return data
+
+    def GetTodayCoinsData(self, path='coins.txt'):
+        today_coins_data = []
+        with open(path, encoding='cp949') as f:
+            coins = f.readlines()
+        for coin in coins:
+            coin = coin.strip()
+            data = self.GetFullData(coin)
+            data['name'] = coin
+            today_coins_data.append(data.iloc[-1])
+        return today_coins_data
 
     def GetCoinLive(self, coin='KRW-BTC'):
         data = GetCandle(coin,unit='minute1',count=1)
