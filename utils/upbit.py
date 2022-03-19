@@ -67,15 +67,22 @@ def GetOrderBook(stockcode):
 
 
 class UpbitTrade:
-
-    stocks_list = []
     selected_coin = ''
     upbit = None
     def __init__(self):
+        self.stocks_list = []
         print("Upbit is initiate.")
 
-    def Login(self, access_key, secret_key):
-        UpbitTrade.upbit = pyupbit.Upbit(access_key, secret_key)
+    def Login(self):
+        with open('private.txt', 'r') as f:
+            data = f.read()
+            data = data.split('\n')
+            for i in data:
+                if 'accesskey' in i:
+                    accesskey = i[i.find(':') + 1:]
+                elif 'secretkey' in i:
+                    secretkey = i[i.find(':') + 1:]
+        UpbitTrade.upbit = pyupbit.Upbit(accesskey, secretkey)
         print(UpbitTrade.upbit.get_balances())
         #error handle required
 
@@ -93,6 +100,9 @@ class UpbitTrade:
         else:
             balance = UpbitTrade.upbit.get_balance(coin)
         print(balance)
+        self.stocks_list = []
+        for coin in balance:
+            self.stocks_list.append(coin['currency'])
         return balance
 
     @SleepTime

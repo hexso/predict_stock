@@ -5,9 +5,13 @@ from models.RSITrade import RSIAlgorithm
 from models.VolumeChange import VolumeChange
 from utils.telegram_bot import TelegramBot
 from utils.CoinData import CoinData
+from utils.upbit import UpbitTrade
 from models.CoinTradeSimulator import CoinTradeSimulator
 from models.StockTradeSimulator import StockTradeSimulator
 import argparse
+
+
+BUY_PRICE = 500000
 
 if __name__ == '__main__':
 
@@ -18,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('--coinsimul', action='store_true')
     parser.add_argument('--stocksimul', action='store_true')
     parser.add_argument('--mute', action='store_true')
+    parser.add_argument('--cointrade', action='store_true')
     args = parser.parse_args()
 
     if args.mute is False:
@@ -89,9 +94,11 @@ if __name__ == '__main__':
         for coin_data in today_coin_data:
             if coin_algorithm.catch_buy_signal(coin_data) is True:
                 picked_coin_list.append(coin_data['name'])
-
-        tgBot.sendmsg('coin signal list')
-        tgBot.sendmsg(str(picked_coin_list))
+        if args.mute is False:
+            tgBot.sendmsg('coin signal list')
+            tgBot.sendmsg(str(picked_coin_list))
+        else:
+            print(str(picked_coin_list))
 
     if args.coinsimul is True:
         with open('coins.txt', encoding='cp949') as f:
@@ -111,6 +118,31 @@ if __name__ == '__main__':
                 simulator = StockTradeSimulator()
                 simulator.set_data(stock_code=data[1], start_time='2022-01-22')
                 simulator.start('stock_simulator_output.txt')
+
+    if args.cointrade is True:
+        coin_data = CoinData()
+        coin_algorithm = CoinTradeSimulator()
+        today_coin_data = coin_data.GetTodayCoinsData()
+        picked_coin_list = []
+        for coin_data in today_coin_data:
+            if coin_algorithm.catch_buy_signal(coin_data) is True:
+                picked_coin_list.append(coin_data['name'])
+        if args.mute is False:
+            tgBot.sendmsg('coin signal list')
+            tgBot.sendmsg(str(picked_coin_list))
+        else:
+            print(str(picked_coin_list))
+
+        trade = UpbitTrade()
+        trade.Login()
+        trade.GetBalance()
+        for coins in picked_coin_list:
+            coin = coins.split('-')[1]
+            if coin not in trade.stocks_list:
+                trade.SendBuying(coins, BUY_PRICE, '시장가')
+                tgBot.sendmsg('{} 코인을  {}원 샀습니다.'.format(coins, BUY_PRICE))
+
+
 
 '''
     # # #주식데이터로 보조지표를 만들어 낸다.
