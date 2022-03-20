@@ -57,13 +57,13 @@ class CoinData:
         data = self.cal.get_stock_indicators(data)
         return data
 
-    def GetTodayCoinsData(self, path='coins.txt'):
+    def GetTodayCoinsData(self, path='coins.txt', time_unit=240):
         today_coins_data = []
         with open(path, encoding='cp949') as f:
             coins = f.readlines()
         for coin in coins:
             coin = coin.strip()
-            data = self.GetFullData(coin)
+            data = self.GetFullData(coin, time_unit=time_unit)
             data['name'] = coin
             today_coins_data.append(data.iloc[-1])
         return today_coins_data

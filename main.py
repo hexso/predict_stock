@@ -84,7 +84,7 @@ if __name__ == '__main__':
     if args.coin is True:
         coin_data = CoinData()
         coin_algorithm = CoinTradeSimulator()
-        today_coin_data = coin_data.GetTodayCoinsData()
+        today_coin_data = coin_data.GetTodayCoinsData(time_unit=1440)
         picked_coin_list = []
         for coin_data in today_coin_data:
             if coin_algorithm.catch_buy_signal(coin_data) is True:
