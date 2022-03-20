@@ -99,7 +99,7 @@ if __name__ == '__main__':
             for stock in stocks:
                 stock = stock.strip()
                 simulator = CoinTradeSimulator()
-                simulator.set_data(coin=stock, time_stamp='2022-01-22')
+                simulator.set_data(coin=stock, time_stamp='2022-01-22', time_unit=1440)
                 simulator.start('coin_simulator_output.txt')
 
     if args.stocksimul is True:

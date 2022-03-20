@@ -19,8 +19,8 @@ class CoinTradeSimulator:
         self.behavior_flag = 'buy'
         self.data = None
 
-    def set_data(self, coin='KRW-BTC', time_stamp='2022-01-22'):
-        self.data = self.data_scraper.GetFullData(coin, when=time_stamp)
+    def set_data(self, coin='KRW-BTC', time_stamp='2022-01-22', time_unit=240):
+        self.data = self.data_scraper.GetFullData(coin, when=time_stamp, time_unit=time_unit)
         self.data = self.data_calculator.get_stock_indicators(self.data)
         self.data['coin'] = coin
         self.account.append({'coin':coin, 'amount':0, 'avg_price':0})
