@@ -57,6 +57,7 @@ class DataHandler:
                 print("{} data is setted".format(path))
         except Exception as e:
             print("load_data error {}".format(e))
+        return self.total_data
 
     def set_next_stock(self, stock=None, start_time=START_DATE,end_time=END_DATE):
         if stock is not None:
